@@ -5,6 +5,8 @@ const exphbs = require('express-handlebars');
 const Inventory = require('./db/DS_Inventory.js');
 const DS_Inv = new Inventory();
 
+app.use(express.static('public'));
+
 app.use(bp.urlencoded({ extended: true }));
 
 app.engine('.hbs', exphbs({ layout: 'main', extname: '.hbs' }));
