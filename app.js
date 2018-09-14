@@ -4,6 +4,10 @@ const bp = require('body-parser');
 const exphbs = require('express-handlebars');
 const Inventory = require('./db/DS_Inventory.js');
 const DS_Inv = new Inventory();
+const knex = require('./knex/knex.js')
+
+
+
 
 app.use(express.static('public'));
 
@@ -14,9 +18,14 @@ app.set('view engine', '.hbs');
 
 // render all items
 app.get('/', (req, res) => {
-  const items = DS_Inv.all();
-  console.log('items', items);
-  res.render('home', { items });
+  DS_Inv.all()
+    .then( results => {
+      const items = results.rows
+      res.render('home', { items } )
+    })
+    .catch( err => {
+      console.log('error', err)
+    })
 });
 
 // render out the form
@@ -28,19 +37,35 @@ app.get('/item/new', (req, res) => {
 app.get('/item/:id', (req, res) => {
   console.log('did it call');
   const { id } = req.params;
-  const item = DS_Inv.getItemById(id);
-  console.log('item', item);
-  res.render('detail', item);
+  // const item = DS_Inv.getItemById(id);
+  // console.log('item', item);
+  knex.raw(`SELECT * FROM items WHERE id = ${id}`)
+    .then( result => {
+      const item = result.rows[0]
+      res.render('detail', item);
+    })
+    .catch( err => {
+      console.log('error', err)
+    })
+  
 });
 
 // add item
 app.post('/item/new', (req, res) => {
   console.log('req.body', req.body);
   const item = req.body;
-  DS_Inv.add(item);
-  res.redirect('/');
+  // DS_Inv.add(item);
+  knex.raw(`INSERT INTO items (name, description) VALUES ('${item.name}', '${item.description}')`)
+    .then( result => {
+      res.redirect('/');
+    })
+    .catch( err => {
+      console.log('error', err)
+      res.redirect('/')
+    })
+  
 });
 
-app.listen(process.env.PORT, () => {
-  console.log(`Started app on port: ${process.env.PORT}`);
+app.listen(process.env.EXPRESS_CONTAINER_PORT, () => {
+  console.log(`Started app on port: ${process.env.EXPRESS_CONTAINER_PORT}`);
 });
