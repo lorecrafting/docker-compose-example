@@ -5,27 +5,37 @@ const exphbs = require('express-handlebars');
 const Inventory = require('./db/DS_Inventory.js');
 const DS_Inv = new Inventory();
 const knex = require('./knex/knex.js')
-
+const morgan = require('morgan');
+const winston = require('winston')
+const logger = winston.createLogger({
+  level: 'info',
+  transports: [
+    new winston.transports.Console()
+  ]
+})
 
 
 
 app.use(express.static('public'));
 
-app.use(bp.urlencoded({ extended: true }));
 
+app.use(morgan('dev'))
+
+app.use(bp.urlencoded({ extended: true }));
 app.engine('.hbs', exphbs({ layout: 'main', extname: '.hbs' }));
 app.set('view engine', '.hbs');
 
 // render all items
 app.get('/', (req, res) => {
-  DS_Inv.all()
-    .then( results => {
-      const items = results.rows
-      res.render('home', { items } )
-    })
-    .catch( err => {
-      console.log('error', err)
-    })
+  knex.raw('SELECT * FROM items')
+  .then( result => {
+    logger.info('SQL QUERY SUCCESSFUL')
+    const items = result.rows
+    res.render('home', { items })
+  })
+  .catch( err => {
+    logger.error(err)
+  })
 });
 
 // render out the form
